@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AI Medical Assistant — Frontend</title>
+<style>
+  :root{
+    --primary:#46ECD5;
+    --bg:#ffffff;
+    --muted:#f6f9f9;
+    --text:#0f1724;
+    --card-radius:12px;
+    --glass: rgba(255,255,255,0.6);
+    --gap:14px;
+    --shadow: 0 6px 18px rgba(9,30,40,0.06);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:linear-gradient(180deg, #f9ffff 0%, #ffffff 60%);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    padding:24px;
+    display:flex;
+    gap:var(--gap);
+    align-items:flex-start;
+    justify-content:center;
+  }
+
+  .app {
+    width:1100px;
+    max-width:100%;
+    background:var(--bg);
+    border-radius:16px;
+    padding:20px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+
+  header{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .brand{
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+  .logo{
+    width:48px;height:48px;border-radius:10px;
+    background:linear-gradient(135deg,var(--primary),#7ef0e0);
+    display:flex;align-items:center;justify-content:center;
+    color:#003636;font-weight:700;font-size:18px;
+    box-shadow:0 6px 18px rgba(70,236,213,0.12);
+  }
+  h1{margin:0;font-size:18px}
+  p.sub{margin:0;color:#51606a;font-size:13px}
+
+  /* Tabs */
+  nav.tabs{
+    display:flex;
+    gap:8px;
+    margin-top:12px;
+  }
+  .tab-btn{
+    background:transparent;border:0;padding:8px 14px;border-radius:10px;cursor:pointer;
+    font-weight:600;color:#0b1320;font-size:14px;
+  }
+  .tab-btn.active{
+    background:linear-gradient(90deg, rgba(70,236,213,0.12), rgba(70,236,213,0.06));
+    box-shadow:inset 0 -2px 0 rgba(70,236,213,0.22);
+    color:var(--primary);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr 360px;
+    gap:18px;
+    margin-top:18px;
+  }
+
+  /* left column (main) */
+  .panel{
+    background:linear-gradient(180deg, rgba(255,255,255,1), rgba(250,255,255,0.6));
+    padding:16px;border-radius:12px;
+  }
+
+  /* Cards */
+  .cards{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+    gap:12px;
+  }
+  .card{
+    background:var(--muted);
+    padding:12px;border-radius:12px;
+    box-shadow:var(--shadow);
+    display:flex;flex-direction:column;gap:6px;
+  }
+  .card .big{font-size:20px;font-weight:700}
+  .card .label{font-size:13px;color:#556671}
+
+  /* Image analysis */
+  .preview{
+    max-width:200px;max-height:200px;border-radius:8px;object-fit:contain;border:1px dashed #dbe7e7;padding:6px;background:white;
+  }
+
+  /* Chat */
+  .chat{
+    height:360px;display:flex;flex-direction:column;gap:8px;
+  }
+  .msg-list{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+  .msg{max-width:78%;padding:10px;border-radius:10px}
+  .msg.user{align-self:flex-end;background:linear-gradient(180deg,#e6fffb,#d7fff7);color:#013532}
+  .msg.ai{align-self:flex-start;background:#f2f7f7;color:#08323a}
+  .chat-input{display:flex;gap:8px}
+  .input, select, textarea{padding:10px;border-radius:10px;border:1px solid #e6f5f4;font-size:14px;background:white;outline:none}
+  .btn{
+    padding:8px 12px;border-radius:10px;border:0;background:var(--primary);color:#003636;font-weight:700;cursor:pointer;
+    box-shadow:0 6px 14px rgba(70,236,213,0.12)
+  }
+  .btn.ghost{background:transparent;border:1px solid #e6f5f4;color:var(--primary);font-weight:700}
+
+  /* table */
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px;border-bottom:1px solid #eef6f6;text-align:left;font-size:13px}
+  th{background:transparent;color:#275056;font-weight:700}
+
+  /* right column (sidebar) */
+  .sidebar .section{margin-bottom:12px}
+  .small{font-size:13px;color:#466e6a}
+
+  /* responsive */
+  @media (max-width:1000px){
+    .grid{grid-template-columns:1fr}
+    .chat{height:300px}
+  }
+</style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="AI Medical Assistant">
+    <header>
+      <div class="brand">
+        <div class="logo">AI</div>
+        <div>
+          <h1>AI Medical Assistant</h1>
+          <p class="sub">Frontend + Fetch API — modern, simple UI</p>
+        </div>
+      </div>
+      <div>
+        <div style="text-align:right">
+          <div class="small">Backend: http://localhost:8000</div>
+          <div class="small" id="backend-status">checking...</div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+      <button class="tab-btn" data-tab="image">Image Analysis</button>
+      <button class="tab-btn" data-tab="chat">Chatbot</button>
+      <button class="tab-btn" data-tab="search">Patient Search</button>
+    </nav>
+
+    <main class="grid" id="main-grid">
+      <section class="panel" id="left-panel" aria-live="polite">
+        <!-- Dashboard -->
+        <div id="tab-dashboard" class="tab active">
+          <h3>Dashboard</h3>
+          <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+            <div class="small">อัพเดตสถิติผู้ป่วยจาก /patient/stats</div>
+            <div>
+              <button class="btn" id="refresh-stats">Refresh</button>
+            </div>
+          </div>
+          <div style="height:12px"></div>
+          <div class="cards" id="stats-cards" aria-live="polite">
+            <!-- cards inserted here -->
+            <div class="card">กำลังโหลด...</div>
+          </div>
+
+          <div style="height:18px"></div>
+
+          <div class="panel" style="padding:12px">
+            <h4 style="margin:0 0 8px 0">Conditions (Top)</h4>
+            <div id="conditions-list" class="small">—</div>
+          </div>
+        </div>
+
+        <!-- Image Analysis -->
+        <div id="tab-image" class="tab" style="display:none">
+          <h3>Image Analysis</h3>
+          <form id="image-form">
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:220px">
+                <label class="small">Image file</label><br>
+                <input type="file" id="image-file" accept="image/*" required />
+                <div style="height:8px"></div>
+                <label class="small">Type</label><br>
+                <select id="image-type" class="input">
+                  <option value="xray">X-ray</option>
+                  <option value="blood">Blood</option>
+                </select>
+                <div style="height:12px"></div>
+                <button class="btn" type="submit">Analyze</button>
+                <button type="button" class="btn ghost" id="clear-image">Clear</button>
+              </div>
+              <div style="width:1px;background:#eef6f6"></div>
+              <div style="min-width:200px">
+                <div class="small">Preview</div>
+                <img id="img-preview" class="preview" src="" alt="preview" style="display:none" />
+                <div id="analysis-result" style="margin-top:8px" class="small">ผลจะขึ้นที่นี่</div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Chatbot -->
+        <div id="tab-chat" class="tab" style="display:none">
+          <h3>Chatbot (AI Doctor)</h3>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <div class="small">Session ID:</div>
+            <input id="session-id" class="input" style="width:220px" value="" />
+            <button class="btn ghost" id="new-session">New</button>
+            <button class="btn ghost" id="clear-session">Clear History</button>
+          </div>
+
+          <div class="panel chat">
+            <div class="msg-list" id="chat-list" role="log" aria-live="polite">
+              <!-- messages -->
+            </div>
+
+            <form id="chat-form" class="chat-input" onsubmit="return false;">
+              <input id="chat-input" class="input" placeholder="พิมพ์ถามหมอ AI..." style="flex:1" />
+              <button class="btn" id="send-chat">ส่ง</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Patient Search -->
+        <div id="tab-search" class="tab" style="display:none">
+          <h3>Patient Search</h3>
+          <form id="search-form">
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="search-query" class="input" placeholder="ค้นหาชื่อ / เงื่อนไข / blood type..." style="flex:1" />
+              <select id="search-type" class="input" style="width:140px">
+                <option value="name">Name</option>
+                <option value="condition">Condition</option>
+                <option value="blood_type">Blood Type</option>
+              </select>
+              <button class="btn" id="do-search">Search</button>
+            </div>
+          </form>
+          <div style="height:12px"></div>
+          <div class="panel" style="padding:8px">
+            <div id="search-results">
+              <div class="small">ผลการค้นหาแสดงที่ตารางด้านล่าง</div>
+              <div style="height:8px"></div>
+              <div style="overflow:auto">
+                <table id="results-table" aria-live="polite">
+                  <thead>
+                    <tr><th>Name</th><th>Age</th><th>Gender</th><th>Condition</th><th>Blood Type</th></tr>
+                  </thead>
+                  <tbody><tr><td colspan="5" class="small">ยังไม่มีผลลัพธ์</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT SIDEBAR -->
+      <aside class="sidebar" style="width:360px">
+        <div class="panel section">
+          <h4 style="margin:0 0 8px 0">Quick Controls</h4>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" id="go-dashboard">Go Dashboard</button>
+            <button class="btn" id="go-image">Go Image</button>
+            <button class="btn" id="go-chat">Go Chat</button>
+            <button class="btn" id="go-search">Go Search</button>
+          </div>
+        </div>
+
+        <div class="panel section">
+          <h4 style="margin:0 0 8px 0">Status</h4>
+          <div class="small">API Host: <b>http://localhost:8000</b></div>
+          <div style="height:8px"></div>
+          <div class="small">Last action: <span id="last-action">—</span></div>
+        </div>
+
+        <div class="panel section">
+          <h4 style="margin:0 0 8px 0">Notes</h4>
+          <div class="small">UI นี้เรียก backend ตามสเปคที่คุณให้ไว้ (ดูไฟล์ backend_simple.py ที่อัพไว้).</div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+<script>
+/*
+  AI Medical Assistant Frontend (Single-file)
+  - Uses Fetch API to call backend at http://localhost:8000
+  - Tabs driven SPA
+  - Session ID stored in localStorage
+*/
+
+/* config */
+const API_HOST = 'http://localhost:8000';
+const SELECTORS = {
+  tabs: document.querySelectorAll('.tab-btn'),
+  panels: document.querySelectorAll('.tab'),
+  backendStatus: document.getElementById('backend-status'),
+  statsCards: document.getElementById('stats-cards'),
+  conditionsList: document.getElementById('conditions-list'),
+  refreshStats: document.getElementById('refresh-stats'),
+  imgForm: document.getElementById('image-form'),
+  imgFile: document.getElementById('image-file'),
+  imgPreview: document.getElementById('img-preview'),
+  imgType: document.getElementById('image-type'),
+  analysisResult: document.getElementById('analysis-result'),
+  clearImage: document.getElementById('clear-image'),
+  chatList: document.getElementById('chat-list'),
+  chatForm: document.getElementById('chat-form'),
+  chatInput: document.getElementById('chat-input'),
+  sessionIdInput: document.getElementById('session-id'),
+  newSessionBtn: document.getElementById('new-session'),
+  clearSessionBtn: document.getElementById('clear-session'),
+  searchForm: document.getElementById('search-form'),
+  searchQuery: document.getElementById('search-query'),
+  searchType: document.getElementById('search-type'),
+  resultsTable: document.getElementById('results-table').querySelector('tbody'),
+  lastAction: document.getElementById('last-action')
+};
+
+/* --- Utility --- */
+function setLastAction(text){
+  SELECTORS.lastAction.textContent = text;
+}
+function toast(msg){
+  // small ephemeral alert in console + lastAction
+  console.log('[toast]', msg);
+  setLastAction(msg);
+}
+
+/* --- Backend health check --- */
+async function checkBackend(){
+  try{
+    const res = await fetch(API_HOST + '/');
+    if(!res.ok) throw new Error('no response');
+    const data = await res.json();
+    SELECTORS.backendStatus.textContent = 'Online — ' + (data.message || 'OK');
+  }catch(e){
+    SELECTORS.backendStatus.textContent = 'Offline or CORS issue';
+    console.warn('backend check failed', e);
+  }
+}
+
+/* --- Tabs handling --- */
+for(const btn of SELECTORS.tabs){
+  btn.addEventListener('click', () => {
+    for(const b of SELECTORS.tabs) b.classList.remove('active');
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    for(const p of SELECTORS.panels) p.style.display = p.id === 'tab-'+tab ? 'block' : 'none';
+    if(tab === 'dashboard') loadStats();
+  });
+}
+/* quick nav */
+document.getElementById('go-dashboard').addEventListener('click', ()=> document.querySelector('[data-tab="dashboard"]').click());
+document.getElementById('go-image').addEventListener('click', ()=> document.querySelector('[data-tab="image"]').click());
+document.getElementById('go-chat').addEventListener('click', ()=> document.querySelector('[data-tab="chat"]').click());
+document.getElementById('go-search').addEventListener('click', ()=> document.querySelector('[data-tab="search"]').click());
+
+
+/* ---------------- DASHBOARD ---------------- */
+async function loadStats(){
+  SELECTORS.statsCards.innerHTML = '<div class="card">กำลังโหลด...</div>';
+  try{
+    const res = await fetch(API_HOST + '/patient/stats');
+    const data = await res.json();
+    if(!data.success) {
+      SELECTORS.statsCards.innerHTML = `<div class="card">ไม่สามารถโหลดสถิติ: ${data.error||'unknown'}</div>`;
+      return;
+    }
+    const stats = data.stats;
+    // build cards
+    const cardsHtml = [];
+    cardsHtml.push(`<div class="card"><div class="label">Total Patients</div><div class="big">${stats.total_patients ?? '—'}</div></div>`);
+    cardsHtml.push(`<div class="card"><div class="label">Average Age</div><div class="big">${(stats.avg_age||0).toFixed(1)}</div></div>`);
+    cardsHtml.push(`<div class="card"><div class="label">Blood Types</div><div class="big">${Object.keys(stats.blood_types||{}).length}</div></div>`);
+    cardsHtml.push(`<div class="card"><div class="label">Genders</div><div class="big">${Object.keys(stats.gender||{}).map(k=>k+': '+stats.gender[k]).join(', ')}</div></div>`);
+    SELECTORS.statsCards.innerHTML = cardsHtml.join('');
+    // conditions top 5
+    const cond = stats.conditions || {};
+    const sorted = Object.entries(cond).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    SELECTORS.conditionsList.innerHTML = sorted.length ? sorted.map(([k,v])=>`${k} (${v})`).join(', ') : '—';
+    toast('Loaded stats');
+  }catch(e){
+    SELECTORS.statsCards.innerHTML = `<div class="card">โหลดสถิติล้มเหลว</div>`;
+    console.error(e);
+    toast('Error loading stats');
+  }
+}
+SELECTORS.refreshStats.addEventListener('click', loadStats);
+
+/* ---------------- IMAGE ANALYSIS ---------------- */
+SELECTORS.imgFile.addEventListener('change', (e)=>{
+  const f = e.target.files[0];
+  if(!f) { SELECTORS.imgPreview.style.display='none'; return; }
+  const url = URL.createObjectURL(f);
+  SELECTORS.imgPreview.src = url;
+  SELECTORS.imgPreview.style.display = 'block';
+  SELECTORS.analysisResult.textContent = 'พร้อมอัปโหลด';
+});
+
+SELECTORS.clearImage.addEventListener('click', ()=>{
+  SELECTORS.imgFile.value = '';
+  SELECTORS.imgPreview.src = '';
+  SELECTORS.imgPreview.style.display = 'none';
+  SELECTORS.analysisResult.textContent = 'ผลจะขึ้นที่นี่';
+});
+
+SELECTORS.imgForm.addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
+  const file = SELECTORS.imgFile.files[0];
+  if(!file){ alert('กรุณาเลือกไฟล์ภาพ'); return; }
+  const type = SELECTORS.imgType.value || 'xray';
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('image_type', type);
+
+  SELECTORS.analysisResult.textContent = 'กำลังส่งไปวิเคราะห์...';
+  try{
+    const res = await fetch(API_HOST + '/analyze', { method: 'POST', body: fd });
+    const data = await res.json();
+    if(!data.success){
+      SELECTORS.analysisResult.textContent = 'วิเคราะห์ไม่สำเร็จ: ' + (data.error||data.message||'unknown');
+      toast('Image analyze failed');
+      return;
+    }
+    // render depending on type
+    if(data.type === 'xray'){
+      SELECTORS.analysisResult.innerHTML = `
+        <div><b>Result:</b> ${data.result || '-'} (${data.confidence || '-'})</div>
+        <div style="margin-top:6px"><b>All:</b> ${Object.entries(data.all_predictions||{}).map(kv=>kv.join(': ')).join(', ')}</div>
+        <div style="margin-top:6px" class="small">file: ${data.filename || ''}</div>
+      `;
+    } else if(data.type === 'blood'){
+      SELECTORS.analysisResult.innerHTML = `
+        <div><b>Total Cells:</b> ${data.total_cells ?? 0}</div>
+        <div style="margin-top:6px"><b>Counts:</b> ${Object.entries(data.cell_counts||{}).map(kv=>kv.join(': ')).join(', ') || '—'}</div>
+        <div style="margin-top:6px" class="small">file: ${data.filename || ''}</div>
+      `;
+    } else {
+      SELECTORS.analysisResult.textContent = JSON.stringify(data);
+    }
+    toast('Image analyzed');
+  }catch(e){
+    console.error(e);
+    SELECTORS.analysisResult.textContent = 'เกิดข้อผิดพลาดระหว่างส่ง';
+    toast('Error analyzing image');
+  }
+});
+
+/* ---------------- CHATBOT ---------------- */
+const CHAT_STORAGE = 'ai_med_chat_session';
+function getSessionId(){
+  let id = SELECTORS.sessionIdInput.value || localStorage.getItem(CHAT_STORAGE);
+  if(!id){
+    id = 'sess-' + Math.random().toString(36).slice(2,10);
+    localStorage.setItem(CHAT_STORAGE, id);
+  }
+  SELECTORS.sessionIdInput.value = id;
+  return id;
+}
+getSessionId();
+
+SELECTORS.newSessionBtn.addEventListener('click', ()=>{
+  const id = 'sess-' + Math.random().toString(36).slice(2,10);
+  SELECTORS.sessionIdInput.value = id;
+  localStorage.setItem(CHAT_STORAGE, id);
+  SELECTORS.chatList.innerHTML = '';
+  toast('New session: ' + id);
+});
+SELECTORS.clearSessionBtn.addEventListener('click', async ()=>{
+  const id = getSessionId();
+  try{
+    await fetch(API_HOST + '/chat/clear/' + encodeURIComponent(id));
+    SELECTORS.chatList.innerHTML = '';
+    toast('Cleared session ' + id);
+  }catch(e){ console.warn(e); toast('error clearing session'); }
+});
+
+SELECTORS.chatForm.addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
+  await sendChat();
+});
+document.getElementById('send-chat').addEventListener('click', async (ev)=>{
+  ev.preventDefault();
+  await sendChat();
+});
+
+async function sendChat(){
+  const text = SELECTORS.chatInput.value.trim();
+  if(!text) return;
+  const sid = getSessionId();
+  appendMsg('user', text);
+  SELECTORS.chatInput.value = '';
+  try{
+    const fd = new FormData();
+    fd.append('message', text);
+    fd.append('session_id', sid);
+    const res = await fetch(API_HOST + '/chat', { method:'POST', body: fd });
+    const data = await res.json();
+    if(!data.success){
+      appendMsg('ai', 'Error: ' + (data.error || 'no response'));
+      return;
+    }
+    appendMsg('ai', data.response || '(no response)');
+    toast('Chat replied');
+  }catch(e){
+    console.error(e);
+    appendMsg('ai', 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    toast('Chat error');
+  }
+}
+
+function appendMsg(who, text){
+  const div = document.createElement('div');
+  div.className = 'msg ' + (who==='user'? 'user':'ai');
+  div.textContent = text;
+  SELECTORS.chatList.appendChild(div);
+  SELECTORS.chatList.scrollTop = SELECTORS.chatList.scrollHeight;
+}
+
+/* ---------------- PATIENT SEARCH ---------------- */
+SELECTORS.searchForm.addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
+  await doSearch();
+});
+document.getElementById('do-search').addEventListener('click', async (ev)=>{
+  ev.preventDefault();
+  await doSearch();
+});
+
+async function doSearch(){
+  const q = SELECTORS.searchQuery.value.trim();
+  const type = SELECTORS.searchType.value || 'name';
+  if(!q){ alert('กรุณาใส่คำค้นหา'); return; }
+  const fd = new FormData();
+  fd.append('search_query', q);
+  fd.append('search_type', type);
+
+  SELECTORS.resultsTable.innerHTML = '<tr><td colspan="5" class="small">กำลังค้นหา...</td></tr>';
+  try{
+    const res = await fetch(API_HOST + '/patient/search', { method:'POST', body: fd });
+    const data = await res.json();
+    if(!data.success){
+      SELECTORS.resultsTable.innerHTML = `<tr><td colspan="5" class="small">Error: ${data.error||'unknown'}</td></tr>`;
+      return;
+    }
+    if(!data.results || data.results.length === 0){
+      SELECTORS.resultsTable.innerHTML = `<tr><td colspan="5" class="small">ไม่พบข้อมูล</td></tr>`;
+      return;
+    }
+    SELECTORS.resultsTable.innerHTML = data.results.map(r=>`
+      <tr>
+        <td>${escapeHtml(r.Name||r.name||'—')}</td>
+        <td>${escapeHtml(r.Age ?? r.age ?? '—')}</td>
+        <td>${escapeHtml(r.Gender||r.gender||'—')}</td>
+        <td>${escapeHtml(r['Medical Condition']||r.condition||'—')}</td>
+        <td>${escapeHtml(r['Blood Type']||r.blood_type||'—')}</td>
+      </tr>
+    `).join('');
+    toast('Search done');
+  }catch(e){
+    console.error(e);
+    SELECTORS.resultsTable.innerHTML = `<tr><td colspan="5" class="small">เกิดข้อผิดพลาด</td></tr>`;
+    toast('Search error');
+  }
+}
+
+/* tiny helper */
+function escapeHtml(s){ if(s===null||s===undefined) return ''; return String(s).replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[m]); }
+
+/* init */
+(async function init(){
+  await checkBackend();
+  // show dashboard by default
+  loadStats();
+})();
+</script>
+</body>
+</html>
